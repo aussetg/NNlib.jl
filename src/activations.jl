@@ -3,11 +3,11 @@
 # Some of activation functions have its wrapper function for GPU in CUDA.jl.
 # https://github.com/JuliaGPU/CuArrays.jl/issues/614
 
-const ACTIVATIONS = 
-    [:σ, :hardσ, :hardtanh, :relu, 
-    :leakyrelu, :relu6, :rrelu, :elu, :gelu, :swish, :selu, 
-    :celu, :softplus, :softsign, :logσ, :logcosh, 
-    :mish, :tanhshrink, :softshrink, :trelu, 
+const ACTIVATIONS =
+    [:σ, :hardσ, :hardtanh, :relu,
+    :leakyrelu, :relu6, :rrelu, :elu, :gelu, :swish, :selu,
+    :celu, :softplus, :softsign, :logσ, :logcosh,
+    :mish, :tanhshrink, :softshrink, :trelu,
     :lisht]
 
 for f in ACTIVATIONS
@@ -32,6 +32,10 @@ function σ(x)
 end
 
 const sigmoid = σ
+
+∇σ(y, dy) = dy .* conj.(y .* (1 .- y)) # broadcasted gradient, for use by activate!!(f, xs)
+
+∇tanh(y, dy) = dy .* conj.(1 .- y.^2)
 
 """
     hardσ(x) = max(0, min(1, (x + 3) / 6)
@@ -67,6 +71,8 @@ hardtanh(x) = max(-one(x), min(one(x), x))
 activation function.
 """
 relu(x) = max(zero(x), x)
+
+∇relu(y, dy) = y .> 0
 
 """
     leakyrelu(x, a=0.01) = max(a*x, x)
@@ -235,15 +241,15 @@ for f in ACTIVATIONS
       error("Use broadcasting (`", $(string(f)), ".(x)`) to apply activation functions to arrays.")
 end
 
-## Define rrules for some activation functions, along with the 
+## Define rrules for some activation functions, along with the
 ## broadcasted rrule activation functions.
-## TODO: add to the lists below all activations. 
+## TODO: add to the lists below all activations.
 
 ## This is a performance hack specifically for Zygote, because it doesn't handle fused
-## broadcasts well; but it generally should be good (or at least harmless) for any AD, as 
+## broadcasts well; but it generally should be good (or at least harmless) for any AD, as
 ## it saves ADing the broadcasting machinery.
 ## Related Issue https://github.com/JuliaDiff/ChainRulesCore.jl/issues/271
-  
+
 UNARY_ACTS = [ # f, df
     (:relu,         :(x > 0)),
     (:hardtanh,     :(-1 < x < 1)),
@@ -259,7 +265,7 @@ for (f, df) in UNARY_ACTS
     @eval function ChainRulesCore.rrule(::typeof(broadcasted),
                                         ::typeof($f), x::Numeric)
         Ω = $f.(x)
-        function $pullback(Δ) 
+        function $pullback(Δ)
             NO_FIELDS, NO_FIELDS, @.(Δ * $df)
         end
         return Ω, $pullback
@@ -276,10 +282,10 @@ for (f, df1, df2) in BINARY_ACTS
 
     pullback = Symbol(:broadcasted_, f, :_pullback)
     @eval function ChainRulesCore.rrule(::typeof(broadcasted),
-                                        ::typeof($f), 
+                                        ::typeof($f),
                                         x1::Numeric, x2::Numeric)
         Ω = $f.(x1, x2)
-        function $pullback(Δ) 
+        function $pullback(Δ)
             NO_FIELDS, NO_FIELDS, @.(Δ * $df1), @.(Δ * $df2)
         end
         return Ω, $pullback
