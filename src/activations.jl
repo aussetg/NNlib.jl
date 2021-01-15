@@ -33,9 +33,9 @@ end
 
 const sigmoid = σ
 
-∇σ(y, dy) = dy .* conj.(y .* (1 .- y)) # broadcasted gradient, for use by map!!(f, xs)
+∇σ(y, dy) = @. dy * conj(y * (1 - y)) # gradient, used in map!!(f, xs)
 
-∇tanh(y, dy) = dy .* conj.(1 .- y.^2)
+∇tanh(y, dy) = @. dy * conj(1 - y^2)
 
 """
     hardσ(x) = max(0, min(1, (x + 3) / 6)
@@ -72,7 +72,7 @@ activation function.
 """
 relu(x) = max(zero(x), x)
 
-∇relu(y, dy) = y .> 0
+∇relu(y, dy) = ifelse.(y .> 0, one(y), zero(y))
 
 """
     leakyrelu(x, a=0.01) = max(a*x, x)
