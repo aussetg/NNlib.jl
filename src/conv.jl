@@ -52,6 +52,7 @@ Apply convolution filter `w` to input `x`. `x` and `w` are 3d/4d/5d tensors
 in 1d/2d/3d convolutions respectively. 
 """
 function conv(x, w::AbstractArray{T, N}; stride=1, pad=0, dilation=1, flipped=false) where {T, N}
+    LinearAlgebra.require_one_based_indexing(x, w)
     stride = expand(Val(N-2), stride)
     pad = expand(Val(N-2), pad)
     dilation = expand(Val(N-2), dilation)
@@ -66,6 +67,7 @@ Depthwise convolution operation with filter `w` on input `x`. `x` and `w`
 are 3d/4d/5d tensors in 1d/2d/3d convolutions respectively. 
 """
 function depthwiseconv(x, w::AbstractArray{T, N}; stride=1, pad=0, dilation=1, flipped=false) where {T, N}
+    LinearAlgebra.require_one_based_indexing(x, w)
     stride = expand(Val(N-2), stride)
     pad = expand(Val(N-2), pad)
     dilation = expand(Val(N-2), dilation)

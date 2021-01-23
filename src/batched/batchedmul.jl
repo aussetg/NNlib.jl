@@ -51,6 +51,7 @@ Both this `copy` and `batched_mul_generic!` produce `@debug` messages,
 and setting for instance `ENV["JULIA_DEBUG"] = NNlib` will display them.
 """
 function batched_mul(A::AbstractArray{T1, 3}, B::AbstractArray{T2, 3}) where {T1, T2}
+    LinearAlgebra.require_one_based_indexing(A, B)
     size(A, 3) == size(B, 3) || size(A, 3) == 1 || size(B, 3) == 1 ||
         throw(DimensionMismatch("batch size mismatch: A != B"))
     _batched_mul(storage_typejoin(A, B), A, B)

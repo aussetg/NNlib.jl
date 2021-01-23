@@ -110,6 +110,7 @@ for backend in (Symbol(), :_direct, :_nnpack)
             function $(Symbol("$(name)$(backend)"))(
                             x::AbstractArray{xT,N},
                             pdims::PoolDims; kwargs...) where {xT, N}
+                LinearAlgebra.require_one_based_indexing(x)
                 y = similar(x, output_size(pdims)..., channels_out(pdims), size(x, N))
                 fill!(y, xT(0))
                 return $(Symbol("$(name)$(backend)!"))(y, x, pdims; kwargs...)

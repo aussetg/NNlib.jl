@@ -28,6 +28,7 @@ julia> upsample_nearest([1 2 3; 4 5 6], (2,))
 ```
 """
 function upsample_nearest(x::AbstractArray{T,N}, scales::NTuple{S, <:Integer}) where {T,N,S}
+    LinearAlgebra.require_one_based_indexing(x)
     S in 1:N || throw(ArgumentError("can't upsample ndims(x)=$N with scale=$scales"))
     outsize = ntuple(d -> d<=S ? scales[d] * size(x,d) : size(x,d), N)
     out = similar(x, T, outsize)
@@ -298,6 +299,7 @@ towards high resolution features.
 Reference : https://arxiv.org/pdf/1609.05158.pdf
 """
 function pixel_shuffle(x::AbstractArray, r::Integer)
+    LinearAlgebra.require_one_based_indexing(x)
     @assert ndims(x) > 2
     d = ndims(x) - 2
     sizein = size(x)[1:d]
